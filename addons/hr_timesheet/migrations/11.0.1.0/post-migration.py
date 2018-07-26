@@ -9,9 +9,11 @@ def update_employee_id(env):
         env.cr, """
             UPDATE account_analytic_line aal
             SET employee_id = (
-              SELECT id
-              FROM hr_employee
-              WHERE user_id = aal.user_id
+              SELECT hr_e.id
+              FROM hr_employee as hr_e
+              INNER JOIN resource_resource as r
+              ON hr_e.resource_id = r.id
+              WHERE aal.user_id = r.user_id
               LIMIT 1
             )
         """)
