@@ -33,6 +33,8 @@ renamed_modules = {
     'stock_pack_operation_auto_fill': 'stock_move_line_auto_fill',
     # OCA/web
     'web_advanced_filters': 'web_advanced_filter',
+    # zzz
+    'transport_management_system': 'tms',
 }
 
 merged_modules = {
