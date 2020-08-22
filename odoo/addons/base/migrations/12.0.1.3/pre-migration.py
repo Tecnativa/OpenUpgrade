@@ -249,6 +249,7 @@ def _migrate_rma(env):
             product_uom = sm.product_uom,
             state = (
                 CASE
+                    WHEN cce.state = 'draft' THEN 'draft'
                     WHEN cce.state = 'approve' THEN 'confirmed'
                     WHEN cce.state = 'process' THEN 'received'
                     WHEN cce.state = 'reject' THEN 'cancelled'
