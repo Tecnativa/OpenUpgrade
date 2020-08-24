@@ -176,7 +176,11 @@ def _migrate_rma(env):
     # modules from OCA/rma instead of the existing private modules
     # rma_ept and website_rma_ept.
     openupgrade.update_module_names(
-        cr, [("rma_ept", "rma"), ("website_rma_ept", "rma_sale")], merge_modules=True,
+        cr, [
+            ("rma_ept", "rma"), 
+            ("website_rma_ept", "rma_sale"),
+            ("delivery_asm", "delivery_gls_asm"),
+        ], merge_modules=True,
     )
     openupgrade.rename_models(cr, [("rma.reason.ept", "rma.operation")])
     openupgrade.rename_tables(cr, [("rma_reason_ept", "rma_operation")])
