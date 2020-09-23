@@ -1,6 +1,8 @@
 # © 2018 Opener B.V. (stefan@opener.amsterdam)
 # License AGPL-3.0 or later (http://www.gnu.org/licenses/agpl.html).
 from openupgradelib import openupgrade
+from openupgradelib.openupgrade_merge_records import _change_generic
+from psycopg2 import sql
 
 
 def generate_thumbnails(env):
@@ -31,6 +33,55 @@ def update_res_company_onboarding_company_state(env):
     ))
     good_companies.write({'base_onboarding_company_state': 'done'})
 
+def _migrate_rma(env):
+    # Migration scripts to be able to use in v12 'rma' and 'rma_sale' modules from 
+    # OCA/rma instead of the existing private modules rma_ept and website_rma_ept.
+    # Current RMAs come from the old `claim.line.ept` but all the main stuff was in
+    # the parent model `crm.claim.ept`, so we must move it and adjust the proper ids.
+    # We'll need to duplicate the followers records for the cases where the parent
+    # model had several lines, wich are now independent entities with ther own mixins.
+    mapping = [
+        ('ir_attachment', 'res_model'),
+        ('mail_message', 'model'),
+        ('mail_activity', 'res_model'),
+        ('mail_followers', 'res_model'),
+    ]
+    for table, model_column in mapping:
+        openupgrade.logged_query(
+            env.cr, sql.SQL("""
+            UPDATE {table} SET {model_column}='rma'
+            WHERE {model_column}='crm.claim.ept'
+            """).format(
+                table=sql.Identifier(table),
+                model_column=sql.Identifier(model_column),
+            ),
+        )
+    # Map `crm_claim_ept_id` with current `rma` corresponding to the old lines
+    claim_ept_map = dict()
+    env.cr.execute("SELECT id, claim_id FROM rma WHERE claim_id IS NOT NULL")
+    for id, claim_id in env.cr.fetchall():
+        claim_ept_map.setdefault(claim_id, [])
+        claim_ept_map[claim_id].append(id)
+    for claim_ept_id in claim_ept_map.keys():
+        rma_ids = claim_ept_map[claim_ept_id]
+        # Use the method just over the first id as they can't share messages
+        # attachments, etc
+        _change_generic(env, "rma", [claim_ept_id], rma_ids[0], [])
+    # Copy followers if the parent `crm_claim_ept` had multiple lines
+    for claim_ept_id in claim_ept_map.keys():
+        rma_ids = claim_ept_map[claim_ept_id]
+        env["rma"].browse(rma_ids[0]).
+        for dup_id in rma_ids[1:]:
+            openupgrade.logged_query(
+                env.cr,
+                """
+                    INSERT INTO mail_followers(
+                        channel_id, partner_id, res_id, res_model)
+                    SELECT channel_id, partner_id, %s, res_model
+                    FROM mail_followers
+                    WHERE res_model = 'rma' AND res_id = %s;
+                """ % (dup_id, rma_ids[0]),
+            )
 
 @openupgrade.migrate(use_env=True)
 def migrate(env, version):
@@ -46,3 +97,4 @@ def migrate(env, version):
         UPDATE ir_model_data SET noupdate=True
         WHERE  module='base' AND name='group_user'""",
     )
+    _migrate_rma(env)
