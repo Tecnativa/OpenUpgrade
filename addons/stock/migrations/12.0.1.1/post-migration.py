@@ -176,7 +176,7 @@ def migrate(env, version):
     map_stock_rule_action(cr)
     fill_stock_picking_type_barcode(env)
     merge_stock_location_path_stock_rule(env)
-    fill_stock_package_level(env)
+    #fill_stock_package_level(env)
     merge_stock_putaway_product(cr)
     openupgrade.load_data(
         cr, 'stock', 'migrations/12.0.1.1/noupdate_changes.xml')
