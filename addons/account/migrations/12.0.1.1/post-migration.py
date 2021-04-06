@@ -5,12 +5,11 @@ from openupgradelib import openupgrade
 from psycopg2.extensions import AsIs
 
 
-def disable_account_payment_term_comp_rule(env):
-    # This rule is disabled (active=False), because if not, when migrating
-    # we will get missing payment terms in a multi-company environment
-    # (as previously there wasn't a record rule).
-    payment_rule = env.ref('account.account_payment_term_comp_rule')
-    payment_rule.active = False
+def _empty_account_payment_term_company(env):
+    """We mimic previous behavior emptying company_id field."""
+    env["account.payment.term"].with_context(
+        active_test=False
+    ).search([]).write({"company_id": False})
 
 
 def map_account_journal_bank_statements_source(cr):
@@ -261,7 +260,7 @@ def populate_fiscal_years(env):
 @openupgrade.migrate()
 def migrate(env, version):
     cr = env.cr
-    disable_account_payment_term_comp_rule(env)
+    _empty_account_payment_term_company(env)
     map_account_journal_bank_statements_source(cr)
     map_account_payment_term_line_option(cr)
     map_account_tax_type_tax_use(cr)
