@@ -822,3 +822,9 @@ def migrate(env, version):
         """ UPDATE ir_model_constraint
         SET write_date = date_update
         WHERE write_date IS NULL AND date_update IS NOT NULL """)
+    # Migration script: helpdesk (enterprise) -> helpdesk_mgmt (OCA)
+    openupgrade.update_module_names(
+        env.cr,
+        [("helpdesk", "helpdesk_mgmt")],
+        merge_modules=True,
+    )
