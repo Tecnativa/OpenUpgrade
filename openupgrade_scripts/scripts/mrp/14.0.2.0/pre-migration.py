@@ -119,12 +119,12 @@ def fill_mrp_routing_workcenter_bom_id(env):
         JOIN mrp_routing_workcenter mrw2 ON mrw.old_routing_workcenter_id = mrw2.id
         WHERE sm.raw_material_production_id = mp.id AND sm.operation_id = mrw2.id""",
     )
-    openupgrade.logged_query(
-        env.cr,
-        """
-        DELETE FROM mrp_routing_workcenter
-        WHERE old_routing_workcenter_id IS NULL""",
-    )
+    # openupgrade.logged_query(
+    #     env.cr,
+    #     """
+    #     DELETE FROM mrp_routing_workcenter
+    #     WHERE old_routing_workcenter_id IS NULL""",
+    # )
 
 
 @openupgrade.migrate()
