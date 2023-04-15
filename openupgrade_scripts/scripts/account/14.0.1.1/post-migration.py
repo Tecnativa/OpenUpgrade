@@ -530,14 +530,15 @@ def create_new_counterpart_account_payment_transfer(env):
             payment_type,
             amount, currency_id,
             destination_account_id, partner_id,
-            create_uid, create_date, write_uid, write_date)
+            create_uid, create_date, write_uid, write_date, payment_method_id)
         SELECT move.id, true, ap.partner_type,
             CASE
             WHEN journal.id = ap.destination_journal_id THEN 'inbound' ELSE 'outbound'
             END,
             ap.amount, ap.currency_id,
             ap.destination_account_id, ap.partner_id,
-            ap.create_uid, ap.create_date, ap.write_uid, ap.write_date
+            ap.create_uid, ap.create_date, ap.write_uid, ap.write_date,
+            ap.payment_method_id
         FROM account_payment ap
         JOIN account_move move
             ON (move.payment_id = ap.id AND move.id != ap.move_id)
