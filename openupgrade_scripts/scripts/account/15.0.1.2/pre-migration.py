@@ -164,32 +164,52 @@ def _fast_fill_account_move_line_tax_tag_invert(env):
         ALTER TABLE account_move_line
         ADD COLUMN IF NOT EXISTS tax_tag_invert BOOL""",
     )
-    # 1. Invoices imported from other softwares might only have kept the tags,
-    # not the taxes
-    openupgrade.logged_query(
-        env.cr,
-        """
-        UPDATE account_move_line aml
-        SET tax_tag_invert = sub.tax_tag_invert
-        FROM (
-            SELECT DISTINCT ON (aml.id) aml.id,
-                CASE
-                    WHEN tag_rel.account_move_line_id IS NOT NULL
-                        AND am.move_type IN ('out_invoice', 'in_refund', 'out_receipt')
-                    THEN TRUE
-                    ELSE FALSE
-                END AS tax_tag_invert
-            FROM account_move am
-            JOIN account_move_line aml ON am.id = aml.move_id
-            LEFT JOIN account_move_line_account_tax_rel tax_rel
-                ON aml.id = tax_rel.account_move_line_id
-            LEFT JOIN account_account_tag_account_move_line_rel tag_rel
-                ON aml.id = tag_rel.account_move_line_id
-            WHERE am.move_type = 'entry' AND aml.tax_repartition_line_id IS NULL
-                AND tax_rel.account_move_line_id IS NULL
-        ) sub
-        WHERE sub.id = aml.id""",
-    )
+    # # 1. Invoices imported from other softwares might only have kept the tags,
+    # # not the taxes. Do it in two opposite steps to avoid looping on every record
+    # openupgrade.logged_query(
+    #     env.cr,
+    #     """
+    #     UPDATE account_move_line aml
+    #     SET tax_tag_invert = TRUE
+    #     FROM (
+    #         SELECT DISTINCT aml.id
+    #         FROM account_move am
+    #         JOIN account_move_line aml ON am.id = aml.move_id
+    #         LEFT JOIN account_move_line_account_tax_rel tax_rel
+    #             ON aml.id = tax_rel.account_move_line_id
+    #         LEFT JOIN account_account_tag_account_move_line_rel tag_rel
+    #             ON aml.id = tag_rel.account_move_line_id
+    #         WHERE am.move_type = 'entry'
+    #             AND aml.tax_repartition_line_id IS NULL
+    #             AND tax_rel.account_move_line_id IS NULL
+    #             AND tag_rel.account_move_line_id IS NOT NULL
+    #             AND am.move_type IN ('out_invoice', 'in_refund', 'out_receipt')
+    #     ) sub
+    #     WHERE sub.id = aml.id""",
+    # )
+    # openupgrade.logged_query(
+    #     env.cr,
+    #     """
+    #     UPDATE account_move_line aml
+    #     SET tax_tag_invert = FALSE
+    #     FROM (
+    #         SELECT DISTINCT aml.id
+    #         FROM account_move am
+    #         JOIN account_move_line aml ON am.id = aml.move_id
+    #         LEFT JOIN account_move_line_account_tax_rel tax_rel
+    #             ON aml.id = tax_rel.account_move_line_id
+    #         LEFT JOIN account_account_tag_account_move_line_rel tag_rel
+    #             ON aml.id = tag_rel.account_move_line_id
+    #         WHERE am.move_type = 'entry'
+    #             AND aml.tax_repartition_line_id IS NULL
+    #             AND tax_rel.account_move_line_id IS NULL
+    #             AND (
+    #                 tag_rel.account_move_line_id IS NULL
+    #                 OR am.move_type NOT IN ('out_invoice', 'in_refund', 'out_receipt')
+    #             )
+    #     ) sub
+    #     WHERE sub.id = aml.id""",
+    # )
     # 2. For invoices with taxes
     openupgrade.logged_query(
         env.cr,
