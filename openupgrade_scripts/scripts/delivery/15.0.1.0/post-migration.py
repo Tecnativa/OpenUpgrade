@@ -37,4 +37,5 @@ def _move_data_from_product_packaging_to_stock_package_type(env):
 
 @openupgrade.migrate()
 def migrate(env, version):
-    _move_data_from_product_packaging_to_stock_package_type(env)
+    # _move_data_from_product_packaging_to_stock_package_type(env)
+    pass
