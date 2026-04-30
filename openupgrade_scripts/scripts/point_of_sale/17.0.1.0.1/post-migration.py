@@ -2,6 +2,8 @@
 
 from openupgradelib import openupgrade
 
+from odoo import Command
+
 
 def fill_account_move_pos_refunded_invoice_ids(env):
     openupgrade.logged_query(
@@ -40,11 +42,45 @@ def product_template_convert_pos_categ_id_m2o_to_m2m(env):
     )
 
 
+def unique_pos_payment_method_cash(env):
+    """To avoid the error https://github.com/odoo/odoo/blob/900fc043064216c5943ea07392d8120be7b50b63/addons/point_of_sale/models/pos_config.py#L351
+    web must leave only one cash payment method in pos.config.
+    """
+    methods = env["pos.payment.method"].search(
+        [
+            ("journal_id.type", "=", "cash"),
+            ("config_ids", "!=", False),
+        ]
+    )
+    for payment_method in methods:
+        if len(payment_method.config_ids) == 1:
+            continue
+        config_0 = payment_method.config_ids[0]
+        # For each "additional" pos.config, a new pos.payment.method must be created
+        extra_configs = payment_method.config_ids - config_0
+        for extra_config in extra_configs:
+            payment_method.copy(
+                {
+                    "config_ids": [Command.set(extra_config.ids)],
+                }
+            )
+        # Finally, for the payment_method, we'll just leave it as config_0
+        payment_method.write(
+            {
+                "config_ids": [
+                    Command.clear(),
+                    Command.link(config_0.id),
+                ],
+            }
+        )
+
+
 @openupgrade.migrate()
 def migrate(env, version):
     fill_account_move_pos_refunded_invoice_ids(env)
     fill_pos_order_shipping_date(env)
     product_template_convert_pos_categ_id_m2o_to_m2m(env)
+    unique_pos_payment_method_cash(env)
     openupgrade.load_data(env, "point_of_sale", "17.0.1.0.1/noupdate_changes.xml")
     openupgrade.delete_records_safely_by_xml_id(
         env,
