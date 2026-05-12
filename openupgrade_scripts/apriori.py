@@ -4,6 +4,12 @@ to help the matching process
 
 # Renamed modules is a mapping from old module name to new module name
 renamed_modules = {
+    # extra-addons
+    "stock_product_meat_logistic_label": "stock_lot_meat_label",
+    "stock_production_lot_fishing_info": "stock_lot_fishing",
+    "stock_production_lot_food": "stock_lot_food",
+    "stock_production_lot_meat": "stock_lot_meat",
+    "stock_picking_batch_report": "stock_picking_batch_report_horeca",
     # odoo
     "l10n_es_pos_tbai": "l10n_es_edi_tbai_pos",
     "mrp_subonctracting_landed_costs": "mrp_subcontracting_landed_costs",
