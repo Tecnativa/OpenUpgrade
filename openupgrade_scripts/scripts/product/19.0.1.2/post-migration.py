@@ -39,4 +39,5 @@ def _product_packaging(env):
 
 @openupgrade.migrate()
 def migrate(env, version):
-    _product_packaging(env)
+    # _product_packaging(env)
+    pass

@@ -119,4 +119,4 @@ def migrate(env, version):
     )
     _product_product_is_favorite(env)
     _product_supplierinfo_product_tmpl_id(env)
-    _prepare_product_packaging_migration(env)
+    # _prepare_product_packaging_migration(env)
